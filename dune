@@ -1,0 +1,3 @@
+(library
+ (name brr_web_tree_sitter)
+ (libraries brr))
