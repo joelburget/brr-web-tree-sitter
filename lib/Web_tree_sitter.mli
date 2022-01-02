@@ -102,7 +102,7 @@ module Tree_cursor : sig
   val end_index : t -> int
   val current_node : t -> node
   val current_field_id : t -> int
-  val current_field_name : t -> string
+  val current_field_name : t -> string option
   val goto_first_child : t -> bool
   val goto_next_sibling : t -> bool
   val goto_parent : t -> bool

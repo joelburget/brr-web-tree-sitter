@@ -4,6 +4,9 @@ type node = Jv.t
 type tree = Jv.t
 
 let tree_sitter () = Jv.get Jv.global "TreeSitter"
+let id x = x
+let to_option = Jv.to_option id
+let to_list = Jv.to_list id
 
 module Position = struct
   type t = Jv.t
@@ -23,7 +26,7 @@ module Language = struct
 
   let load wasm =
     Jv.call (Jv.get (tree_sitter ()) "Language") "load" [| Jv.of_string wasm |]
-    |> Fut.of_promise ~ok:(fun lang -> lang)
+    |> Fut.of_promise ~ok:id
   ;;
 
   let version lang = Jv.get lang "version" |> Jv.to_int
@@ -72,6 +75,8 @@ module Tree = struct
 
   let copy tree = Jv.call tree "copy" [||]
   let delete tree = Jv.call tree "delete" [||] |> ignore
+
+  (* TODO: edit *)
   let root_node tree = Jv.get tree "rootNode"
   let get_language tree = Jv.call tree "getLanguage" [||]
   let walk tree = Jv.call tree "walk" [||]
@@ -91,7 +96,7 @@ module Node = struct
   let has_changes node = Jv.call node "hasChanges" [||] |> Jv.to_bool
   let is_missing node = Jv.call node "isMissing" [||] |> Jv.to_bool
   let ( = ) a b = Jv.call a "equals" [| b |] |> Jv.to_bool
-  let child node ix = Jv.call node "child" [| Jv.of_int ix |] |> Jv.to_option (fun x -> x)
+  let child node ix = Jv.call node "child" [| Jv.of_int ix |] |> to_option
 
   (* let named_child node ix = Jv.call node "namedChild" [| Jv.of_string ix |] *)
   (* let child_for_field_id node field_id = Jv.call node "childForFieldId" [| field_id |] *)
@@ -102,8 +107,6 @@ module Node = struct
   ;;
      *)
 
-  let to_option = Jv.to_option (fun x -> x)
-  let to_list = Jv.to_list (fun x -> x)
   let child_count node = Jv.get node "childCount" |> Jv.to_int
   let named_child_count node = Jv.get node "namedChildCount" |> Jv.to_int
   let first_child node = Jv.get node "firstChild" |> to_option
@@ -144,7 +147,11 @@ module Tree_cursor = struct
   let end_index cursor = Jv.get cursor "endIndex" |> Jv.to_int
   let current_node cursor = Jv.call cursor "currentNode" [||]
   let current_field_id cursor = Jv.call cursor "currentFieldId" [||] |> Jv.to_int
-  let current_field_name cursor = Jv.call cursor "currentFieldName" [||] |> Jv.to_string
+
+  let current_field_name cursor =
+    Jv.call cursor "currentFieldName" [||] |> Jv.to_option Jv.to_string
+  ;;
+
   let goto_first_child cursor = Jv.call cursor "gotoFirstChild" [||] |> Jv.to_bool
   let goto_next_sibling cursor = Jv.call cursor "gotoNextSibling" [||] |> Jv.to_bool
   let goto_parent cursor = Jv.call cursor "gotoParent" [||] |> Jv.to_bool

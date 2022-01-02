@@ -73,13 +73,9 @@ let (_ : unit Fut.t) =
   test "Tree_cursor.end_position" Position.(row end_pos = 0 && column end_pos = 9);
   test "Tree_cursor.start_index" (Tree_cursor.start_index cursor = 0);
   test "Tree_cursor.end_index" (Tree_cursor.end_index cursor = 9);
+  test "Tree_cursor.node_is_named" (Tree_cursor.node_is_named cursor = true);
+  test "Tree_cursor.node_is_missing" (Tree_cursor.node_is_missing cursor = false);
+  test "Tree_cursor.current_field_name" (Tree_cursor.current_field_name cursor = None);
   Console.log
-    Tree_cursor.
-      [ node_type_id cursor
-      ; node_id cursor
-      ; node_is_named cursor
-      ; node_is_missing cursor
-      ; current_field_id cursor
-        (* TODO: broken ; current_field_name cursor *)
-      ]
+    Tree_cursor.[ cursor; node_type_id cursor; node_id cursor; current_field_id cursor ]
 ;;
