@@ -2,9 +2,11 @@ open Brr
 open Brr_web_tree_sitter
 open Web_tree_sitter
 
-let test lbl b =
-  let result = if b then "okay" else "FAILED" in
-  El.append_children (Document.body G.document) El.[ br (); txt' (lbl ^ ": " ^ result) ]
+let test lbl success =
+  let msg, color = if success then lbl ^ ": okay", "green" else lbl ^ ": FAILED", "red" in
+  let elem = El.(p [ txt' msg ]) in
+  El.(set_inline_style Style.color (Jstr.v color) elem);
+  El.append_children (Document.body G.document) [ elem ]
 ;;
 
 let unnamed_lang, fulfil_unnamed_lang = Fut.create ()
