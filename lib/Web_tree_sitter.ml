@@ -1,7 +1,12 @@
-type parser = Jv.t
-type tree_cursor = Jv.t
+type edit = Jv.t
+type language = Jv.t
 type node = Jv.t
+type parser = Jv.t
+type position = Jv.t
+type query = Jv.t
+type range = Jv.t
 type tree = Jv.t
+type tree_cursor = Jv.t
 
 let tree_sitter () = Jv.get Jv.global "TreeSitter"
 let id x = x
@@ -9,10 +14,48 @@ let to_option = Jv.to_option id
 let to_list = Jv.to_list id
 
 module Position = struct
-  type t = Jv.t
+  type t = position
 
   let row t = Jv.get t "row" |> Jv.to_int
   let column t = Jv.get t "column" |> Jv.to_int
+end
+
+module Range = struct
+  type t = range
+
+  let start_index t = Jv.get t "startIndex" |> Jv.to_int
+  let end_index t = Jv.get t "endIndex" |> Jv.to_int
+  let start_position t = Jv.get t "startPosition"
+  let end_position t = Jv.get t "endPosition"
+end
+
+module Edit = struct
+  type t = edit
+
+  let new'
+      ~start_index
+      ~old_end_index
+      ~new_end_index
+      ~start_position
+      ~old_end_position
+      ~new_end_position
+    =
+    Jv.obj
+      [| "startIndex", Jv.of_int start_index
+       ; "oldEndIndex", Jv.of_int old_end_index
+       ; "newEndIndex", Jv.of_int new_end_index
+       ; "startPosition", start_position
+       ; "oldEndPosition", old_end_position
+       ; "newEndPosition", new_end_position
+      |]
+  ;;
+
+  let start_index t = Jv.get t "startIndex" |> Jv.to_int
+  let old_end_index t = Jv.get t "oldEndIndex" |> Jv.to_int
+  let new_end_index t = Jv.get t "newEndIndex" |> Jv.to_int
+  let start_position t = Jv.get t "startPosition"
+  let old_end_position t = Jv.get t "oldEndPosition"
+  let new_end_position t = Jv.get t "newEndPosition"
 end
 
 module Web_tree_sitter = struct
@@ -22,7 +65,7 @@ module Web_tree_sitter = struct
 end
 
 module Language = struct
-  type t = Jv.t
+  type t = language
 
   let load wasm =
     Jv.call (Jv.get (tree_sitter ()) "Language") "load" [| Jv.of_string wasm |]
@@ -40,13 +83,30 @@ module Language = struct
     Jv.call lang "fieldNameForId" [| Jv.of_int name |] |> Jv.to_string
   ;;
 
-  (* TODO: idForNodeType *)
+  let id_for_node_type lang type' named =
+    Jv.call lang "idForNodeType" [| Jv.of_string type'; Jv.of_bool named |]
+    |> Jv.to_option Jv.to_string
+  ;;
+
   let node_type_count lang = Jv.get lang "nodeTypeCount" |> Jv.to_int
-  (* TODO: nodeTypeForId,nodeTypeIsNamed, nodeTypeIsVisible, query *)
+
+  let node_type_for_id lang type_id =
+    Jv.call lang "nodeTypeForId" [| Jv.of_int type_id |] |> Jv.to_option Jv.to_string
+  ;;
+
+  let node_type_is_named lang type_id =
+    Jv.call lang "nodeTypeIsNamed" [| Jv.of_int type_id |] |> Jv.to_bool
+  ;;
+
+  let node_type_is_visible lang type_id =
+    Jv.call lang "nodeTypeIsVisible" [| Jv.of_int type_id |] |> Jv.to_bool
+  ;;
+
+  let query lang source = Jv.call lang "query" [| Jv.of_string source |]
 end
 
 module Parser = struct
-  type t = Jv.t
+  type t = parser
 
   let new' () = Jv.new' (tree_sitter ()) [||]
   let set_language parser lang = Jv.call parser "setLanguage" [| lang |] |> ignore
@@ -75,12 +135,11 @@ module Tree = struct
 
   let copy tree = Jv.call tree "copy" [||]
   let delete tree = Jv.call tree "delete" [||] |> ignore
-
-  (* TODO: edit *)
+  let edit tree edit = Jv.call tree "edit" [| edit |] |> ignore
   let root_node tree = Jv.get tree "rootNode"
   let get_language tree = Jv.call tree "getLanguage" [||]
   let walk tree = Jv.call tree "walk" [||]
-  (* TODO getChangedRanges *)
+  let get_changed_ranges t1 t2 = Jv.call t1 "getChangedRanges" [| t2 |]
 end
 
 module Node = struct
@@ -158,18 +217,73 @@ module Tree_cursor = struct
 end
 
 module Query = struct
-  type t = Jv.t
+  type t = query
+
+  module Capture = struct
+    type t =
+      { name : string
+      ; text : string
+      }
+
+    let of_jv jv =
+      { name = Jv.get jv "name" |> Jv.to_string; text = Jv.get jv "text" |> Jv.to_string }
+    ;;
+  end
+
+  module Match = struct
+    type t =
+      { pattern : int
+      ; captures : Capture.t list
+      }
+
+    let of_jv jv =
+      { pattern = Jv.get jv "pattern" |> Jv.to_int
+      ; captures = Jv.get jv "captures" |> Jv.to_list Capture.of_jv
+      }
+    ;;
+  end
+
+  module Operand = struct
+    type t =
+      { type' : string
+      ; name : string
+      }
+
+    let of_jv jv =
+      { type' = Jv.get jv "type'" |> Jv.to_string
+      ; name = Jv.get jv "name" |> Jv.to_string
+      }
+    ;;
+  end
+
+  module Predicate = struct
+    type t =
+      { operator : string
+      ; operands : Operand.t list
+      }
+
+    let of_jv jv =
+      { operator = Jv.get jv "operator" |> Jv.to_string
+      ; operands = Jv.get jv "operands" |> Jv.to_list Operand.of_jv
+      }
+    ;;
+  end
 
   let delete query = Jv.call query "delete" [||] |> ignore
 
-  (* TODO
   let matches query node start_pos end_pos =
-    Jv.call query "matches" [| node; start_pos; end_pos |]
+    Jv.call query "matches" [| node; start_pos; end_pos |] |> Jv.to_list Match.of_jv
   ;;
 
   let captures query node start_pos end_pos =
-    Jv.call query "captures" [| node; start_pos; end_pos |]
+    Jv.call query "captures" [| node; start_pos; end_pos |] |> Jv.to_list Capture.of_jv
   ;;
-  *)
-  (* TODO: predicatesForPattern, didExceedMatchLimit *)
+
+  let predicates_for_pattern query n =
+    Jv.call query "predicatesForPattern" [| Jv.of_int n |] |> Jv.to_list Predicate.of_jv
+  ;;
+
+  let did_exceed_match_limit query =
+    Jv.call query "didExceedMatchLimit" [||] |> Jv.to_bool
+  ;;
 end
