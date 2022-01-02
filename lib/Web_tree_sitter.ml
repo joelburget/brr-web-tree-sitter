@@ -2,9 +2,15 @@ type parser = Jv.t
 type tree_cursor = Jv.t
 type node = Jv.t
 type tree = Jv.t
-type position = Jv.t
 
 let tree_sitter () = Jv.get Jv.global "TreeSitter"
+
+module Position = struct
+  type t = Jv.t
+
+  let row t = Jv.get t "row" |> Jv.to_int
+  let column t = Jv.get t "column" |> Jv.to_int
+end
 
 module Web_tree_sitter = struct
   type t = Jv.t

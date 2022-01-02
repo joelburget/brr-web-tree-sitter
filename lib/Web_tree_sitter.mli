@@ -2,12 +2,18 @@ type tree_cursor
 type parser
 type node
 type tree
-type position
 
 module Web_tree_sitter : sig
   type t
 
   val init : unit -> unit Fut.or_error
+end
+
+module Position : sig
+  type t
+
+  val row : t -> int
+  val column : t -> int
 end
 
 module Language : sig
@@ -26,7 +32,7 @@ module Node : sig
 
   val type_id : t -> int
   val type' : t -> string
-  val end_position : t -> position
+  val end_position : t -> Position.t
   val end_index : t -> int
   val text : t -> string
 
@@ -90,8 +96,8 @@ module Tree_cursor : sig
   val node_is_named : t -> bool
   val node_is_missing : t -> bool
   val node_text : t -> string
-  val start_position : t -> position
-  val end_position : t -> position
+  val start_position : t -> Position.t
+  val end_position : t -> Position.t
   val start_index : t -> int
   val end_index : t -> int
   val current_node : t -> node
