@@ -1,0 +1,26 @@
+(executables
+ (names min)
+ (libraries brr brr.poked brr_web_tree_sitter)
+ (link_flags
+  (:standard -linkall -no-check-prims))
+ (modes byte))
+
+(rule
+ (targets min.js)
+ (action
+  (run
+   %{bin:js_of_ocaml}
+   -I
+   %{lib:brr:.}
+   -I
+   .min.eobjs/byte ; to see the program's cmis
+   --toplevel
+   +toplevel.js
+   +dynlink.js
+   %{dep:min.bc}
+   -o
+   %{targets})))
+
+(alias
+ (name app)
+ (deps min.js min.html))

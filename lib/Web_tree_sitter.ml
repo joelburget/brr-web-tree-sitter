@@ -1,3 +1,4 @@
+type parser = Jv.t
 type tree_cursor = Jv.t
 type node = Jv.t
 type tree = Jv.t
@@ -9,7 +10,6 @@ module Web_tree_sitter = struct
   type t = Jv.t
 
   let init () = Jv.call (tree_sitter ()) "init" [||] |> Fut.of_promise ~ok:ignore
-  let new' () = Jv.new' (tree_sitter ()) [||]
 end
 
 module Language = struct
@@ -20,8 +20,8 @@ module Language = struct
     |> Fut.of_promise ~ok:(fun lang -> lang)
   ;;
 
-  let version lang = Jv.call lang "version" [||] |> Jv.to_int
-  let field_count lang = Jv.call lang "fieldCount" [||] |> Jv.to_int
+  let version lang = Jv.get lang "version" |> Jv.to_int
+  let field_count lang = Jv.get lang "fieldCount" |> Jv.to_int
 
   let field_id_for_name lang name =
     Jv.call lang "fieldIdForName" [| Jv.of_string name |] |> Jv.to_int
@@ -32,13 +32,14 @@ module Language = struct
   ;;
 
   (* TODO: idForNodeType *)
-  let node_type_count lang = Jv.call lang "nodeTypeCount" [||] |> Jv.to_int
+  let node_type_count lang = Jv.get lang "nodeTypeCount" |> Jv.to_int
   (* TODO: nodeTypeForId,nodeTypeIsNamed, nodeTypeIsVisible, query *)
 end
 
 module Parser = struct
   type t = Jv.t
 
+  let new' () = Jv.new' (tree_sitter ()) [||]
   let set_language parser lang = Jv.call parser "setLanguage" [| lang |] |> ignore
   let get_language parser = Jv.call parser "getLanguage" [||]
   let parse parser source_code = Jv.call parser "parse" [| Jv.of_string source_code |]
@@ -65,7 +66,7 @@ module Tree = struct
 
   let copy tree = Jv.call tree "copy" [||]
   let delete tree = Jv.call tree "delete" [||] |> ignore
-  let root_node tree = Jv.call tree "rootNode" [||]
+  let root_node tree = Jv.get tree "rootNode"
   let get_language tree = Jv.call tree "getLanguage" [||]
   let walk tree = Jv.call tree "walk" [||]
   (* TODO getChangedRanges *)
@@ -74,11 +75,11 @@ end
 module Node = struct
   type t = node
 
-  let type_id node = Jv.call node "typeId" [||] |> Jv.to_int
-  let type' node = Jv.call node "type" [||] |> Jv.to_string
-  let end_position node = Jv.call node "endPosition" [||]
-  let end_index node = Jv.call node "endIndex" [||] |> Jv.to_int
-  let text node = Jv.call node "text" [||] |> Jv.to_string
+  let type_id node = Jv.get node "typeId" |> Jv.to_int
+  let type' node = Jv.get node "type" |> Jv.to_string
+  let end_position node = Jv.get node "endPosition"
+  let end_index node = Jv.get node "endIndex" |> Jv.to_int
+  let text node = Jv.get node "text" |> Jv.to_string
   let is_named node = Jv.call node "isNamed" [||] |> Jv.to_bool
   let has_error node = Jv.call node "hasError" [||] |> Jv.to_bool
   let has_changes node = Jv.call node "hasChanges" [||] |> Jv.to_bool
@@ -97,21 +98,21 @@ module Node = struct
 
   let to_option = Jv.to_option (fun x -> x)
   let to_list = Jv.to_list (fun x -> x)
-  let child_count node = Jv.call node "childCount" [||] |> Jv.to_int
-  let named_child_count node = Jv.call node "namedChildCount" [||] |> Jv.to_int
-  let first_child node = Jv.call node "firstChild" [||] |> to_option
-  let first_named_child node = Jv.call node "firstNamedChild" [||] |> to_option
-  let last_child node = Jv.call node "lastChild" [||] |> to_option
-  let last_named_child node = Jv.call node "lastNamedChild" [||] |> to_option
-  let children node = Jv.call node "children" [||] |> to_list
-  let named_children node = Jv.call node "namedChildren" [||] |> to_list
+  let child_count node = Jv.get node "childCount" |> Jv.to_int
+  let named_child_count node = Jv.get node "namedChildCount" |> Jv.to_int
+  let first_child node = Jv.get node "firstChild" |> to_option
+  let first_named_child node = Jv.get node "firstNamedChild" |> to_option
+  let last_child node = Jv.get node "lastChild" |> to_option
+  let last_named_child node = Jv.get node "lastNamedChild" |> to_option
+  let children node = Jv.get node "children" |> to_list
+  let named_children node = Jv.get node "namedChildren" |> to_list
 
   (* TODO: descendantsOfType *)
-  let next_sibling node = Jv.call node "nextSibling" [||] |> to_option
-  let previous_sibling node = Jv.call node "previousSibling" [||] |> to_option
-  let next_named_sibling node = Jv.call node "nextNamedSibling" [||] |> to_option
-  let previous_named_sibling node = Jv.call node "previousNamedSibling" [||] |> to_option
-  let parent node = Jv.call node "parent" [||] |> to_option
+  let next_sibling node = Jv.get node "nextSibling" |> to_option
+  let previous_sibling node = Jv.get node "previousSibling" |> to_option
+  let next_named_sibling node = Jv.get node "nextNamedSibling" |> to_option
+  let previous_named_sibling node = Jv.get node "previousNamedSibling" |> to_option
+  let parent node = Jv.get node "parent" |> to_option
 
   (* TODO: descendantForIndex, namedDescendantForIndex
    * descendantForPosition, namedDescendantForPosition
@@ -125,16 +126,16 @@ module Tree_cursor = struct
 
   let delete cursor = Jv.call cursor "delete" [||] |> ignore
   let reset cursor node = Jv.call cursor "reset" [| node |] |> ignore
-  let node_type cursor = Jv.call cursor "nodeType" [||] |> Jv.to_string
-  let node_type_id cursor = Jv.call cursor "nodeTypeId" [||] |> Jv.to_int
-  let node_id cursor = Jv.call cursor "nodeId" [||] |> Jv.to_int
-  let node_is_named cursor = Jv.call cursor "nodeIsNamed" [||] |> Jv.to_bool
-  let node_is_missing cursor = Jv.call cursor "nodeIsMissing" [||] |> Jv.to_bool
-  let node_text cursor = Jv.call cursor "nodeText" [||] |> Jv.to_string
-  let start_position cursor = Jv.call cursor "startPosition" [||]
-  let end_position cursor = Jv.call cursor "endPosition" [||]
-  let start_index cursor = Jv.call cursor "startIndex" [||] |> Jv.to_int
-  let end_index cursor = Jv.call cursor "endIndex" [||] |> Jv.to_int
+  let node_type cursor = Jv.get cursor "nodeType" |> Jv.to_string
+  let node_type_id cursor = Jv.get cursor "nodeTypeId" |> Jv.to_int
+  let node_id cursor = Jv.get cursor "nodeId" |> Jv.to_int
+  let node_is_named cursor = Jv.get cursor "nodeIsNamed" |> Jv.to_bool
+  let node_is_missing cursor = Jv.get cursor "nodeIsMissing" |> Jv.to_bool
+  let node_text cursor = Jv.get cursor "nodeText" |> Jv.to_string
+  let start_position cursor = Jv.get cursor "startPosition"
+  let end_position cursor = Jv.get cursor "endPosition"
+  let start_index cursor = Jv.get cursor "startIndex" |> Jv.to_int
+  let end_index cursor = Jv.get cursor "endIndex" |> Jv.to_int
   let current_node cursor = Jv.call cursor "currentNode" [||]
   let current_field_id cursor = Jv.call cursor "currentFieldId" [||] |> Jv.to_int
   let current_field_name cursor = Jv.call cursor "currentFieldName" [||] |> Jv.to_string

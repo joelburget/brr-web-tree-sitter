@@ -1,4 +1,5 @@
 type tree_cursor
+type parser
 type node
 type tree
 type position
@@ -7,7 +8,6 @@ module Web_tree_sitter : sig
   type t
 
   val init : unit -> unit Fut.or_error
-  val new' : unit -> t
 end
 
 module Language : sig
@@ -29,6 +29,8 @@ module Node : sig
   val end_position : t -> position
   val end_index : t -> int
   val text : t -> string
+
+  (* XXX returns int? *)
   val is_named : t -> bool
   val has_error : t -> bool
   val has_changes : t -> bool
@@ -63,8 +65,9 @@ module Tree : sig
 end
 
 module Parser : sig
-  type t
+  type t = parser
 
+  val new' : unit -> t
   val set_language : t -> Language.t -> unit
   val get_language : t -> Language.t
   val parse : t -> string -> Tree.t
