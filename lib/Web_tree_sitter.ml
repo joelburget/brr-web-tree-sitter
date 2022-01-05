@@ -8,6 +8,8 @@ type range = Jv.t
 type tree = Jv.t
 type tree_cursor = Jv.t
 
+(* external _tree_sitter_fake_primitive : unit -> unit = "tree_sitter_fake_primitive" *)
+
 let tree_sitter () = Jv.get Jv.global "TreeSitter"
 let id x = x
 let to_option = Jv.to_option id
