@@ -8,5 +8,5 @@ OCaml bindings for [tree-sitter](https://github.com/tree-sitter/tree-sitter)'s J
 > dune build
 > cd _build/default/bin
 > yarn install
-> yarn parcel min.html tree-sitter-unnamed.wasm node_modules/web-tree-sitter/tree-sitter.wasm
+> yarn parcel demo.html tree-sitter-unnamed.wasm node_modules/web-tree-sitter/tree-sitter.wasm
 ```

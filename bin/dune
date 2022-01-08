@@ -1,5 +1,5 @@
 (executables
- (names min)
+ (names demo)
  (libraries brr brr_web_tree_sitter)
  (link_flags
   (:standard -no-check-prims))
