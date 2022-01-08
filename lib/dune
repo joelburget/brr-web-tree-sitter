@@ -2,15 +2,4 @@
  (name brr_web_tree_sitter)
  (js_of_ocaml
   (javascript_files ./tree-sitter.js))
- (libraries brr dune-site))
-
-(generate_sites_module
- (module mysites)
- (sites brr_web_tree_sitter))
-
-(install
- (section
-  (site
-   (brr_web_tree_sitter wasm)))
- (files
-  (tree-sitter.wasm as tree-sitter.wasm)))
+ (libraries brr))

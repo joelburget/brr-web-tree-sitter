@@ -1,0 +1,11 @@
+{
+    "name": "brr-web-tree-sitter-example",
+    "version": "0.0.1",
+    "license": "MIT",
+    "devDependencies": {
+        "parcel": "2.0.0"
+    },
+    "dependencies": {
+        "web-tree-sitter": "^0.20.2"
+    }
+}
