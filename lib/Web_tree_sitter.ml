@@ -2,6 +2,7 @@ type edit = Jv.t
 type language = Jv.t
 type node = Jv.t
 type parser = Jv.t
+type parser_options = Jv.t
 type position = Jv.t
 type query = Jv.t
 type range = Jv.t
@@ -107,18 +108,39 @@ end
 
 module Parser = struct
   type t = parser
+  type input = start_index:int -> ?start_point:position -> ?end_index:int -> string option
+
+  module Options = struct
+    type t = parser_options
+
+    let new' ~included_ranges =
+      Jv.obj [| "includedRanges", Jv.of_list id included_ranges |]
+    ;;
+  end
 
   let new' () = Jv.new' (tree_sitter ()) [||]
   let set_language parser lang = Jv.call parser "setLanguage" [| lang |] |> ignore
   let get_language parser = Jv.call parser "getLanguage" [||]
-  let parse parser source_code = Jv.call parser "parse" [| Jv.of_string source_code |]
 
-  let reparse parser tree source_code =
-    Jv.call parser "parse" [| Jv.of_string source_code; tree |]
+  let all_parser parser input previous_tree options =
+    let options = match options with None -> Jv.null | Some opts -> opts in
+    Jv.call parser "parse" [| input; previous_tree; options |]
   ;;
 
-  let parse_structure parser ~f = Jv.call parser "parse" [| Jv.repr f |]
-  let reparse_structure parser tree ~f = Jv.call parser "parse" [| Jv.repr f; tree |]
+  let parse parser ?options source_code =
+    all_parser parser (Jv.of_string source_code) Jv.null options
+  ;;
+
+  let reparse parser ?options tree source_code =
+    all_parser parser (Jv.of_string source_code) tree options
+  ;;
+
+  let parse_structure parser ?options f = all_parser parser (Jv.repr f) Jv.null options
+
+  let reparse_structure parser ?options tree f =
+    all_parser parser (Jv.repr f) tree options
+  ;;
+
   let reset parser = Jv.call parser "reset" [||] |> ignore
 
   let set_timeout_micros parser timeout =

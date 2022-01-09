@@ -2,6 +2,7 @@ type edit
 type language
 type node
 type parser
+type parser_options
 type position
 type query
 type range
@@ -52,6 +53,13 @@ end
 
 module Parser : sig
   type t = parser
+  type input = start_index:int -> ?start_point:position -> ?end_index:int -> string option
+
+  module Options : sig
+    type t = parser_options
+
+    val new' : included_ranges:range list -> t
+  end
 
   (** Create a new parser. *)
   val new' : unit -> t
@@ -82,16 +90,16 @@ module Parser : sig
         [parser_set_timeout_micros] function. You can resume parsing from where the parser
         left out by calling [parse] again with the same arguments. Or you can start
         parsing from scratch by first calling [reset]. *)
-  val parse : t -> string -> tree
+  val parse : t -> ?options:Options.t -> string -> tree
 
   (** See [parse] *)
-  val reparse : t -> tree -> string -> tree
+  val reparse : t -> ?options:Options.t -> tree -> string -> tree
 
   (** See [parse] *)
-  val parse_structure : t -> f:(int -> position -> string option) -> tree
+  val parse_structure : t -> ?options:Options.t -> input -> tree
 
   (** See [parse] *)
-  val reparse_structure : t -> tree -> f:(int -> position -> string option) -> tree
+  val reparse_structure : t -> ?options:Options.t -> tree -> input -> tree
 
   (** Instruct the parser to start the next parse from the beginning.
 
@@ -207,6 +215,8 @@ module Node : sig
 
   (** Get the node's immediate parent. *)
   val parent : t -> t option
+
+  (* TODO val descendant_for_index : int -> node *)
 
   val walk : t -> tree_cursor
 
